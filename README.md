@@ -1,4 +1,4 @@
-# kubernetes release logo
+# kubernetes release logos
 ---
 ## v1.23 - The Next Frontier
 ![The Next Frontier](v1.23.png)
