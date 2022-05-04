@@ -1,5 +1,8 @@
 # kubernetes release logos
 ---
+## v1.24 - Stargazer
+![Stargazer](v1.24.png)
+
 ## v1.23 - The Next Frontier
 ![The Next Frontier](v1.23.png)
 
