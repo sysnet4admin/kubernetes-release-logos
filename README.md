@@ -1,5 +1,8 @@
 # kubernetes release logos
 ---
+## v1.25 - Combiner
+![Combiner](v1.25.png)
+
 ## v1.24 - Stargazer
 ![Stargazer](v1.24.png)
 
