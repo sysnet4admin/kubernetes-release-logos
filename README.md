@@ -1,5 +1,8 @@
 # kubernetes release logos
 ---
+## v1.26 - Electrifying
+![Electrifying](v1.26.png)
+
 ## v1.25 - Combiner
 ![Combiner](v1.25.png)
 
