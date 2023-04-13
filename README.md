@@ -1,5 +1,8 @@
 # kubernetes release logos
 ---
+## v1.27 - Chill Vibes
+![Chill Vibes](v1.27.png)
+
 ## v1.26 - Electrifying
 ![Electrifying](v1.26.png)
 
