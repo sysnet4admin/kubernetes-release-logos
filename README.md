@@ -37,10 +37,10 @@
 ![Unlimited Breadsticks For All](v1.16.png)
 
 ## v1.15 - The Persevering Release
-![The Persevering Release](v1.15.png)
+![The Persevering Release](v1.15.jpeg)
 
 ## v1.14 - Caturnetes
-![Caturnetes](v1.14.png)
+![Caturnetes](v1.14.jpeg)
 
 ## v1.13 - Angel Release
 ![Angel Release](v1.13.png)
