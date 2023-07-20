@@ -24,13 +24,29 @@
 ## v1.20 - The Raddest Release
 ![The Raddest Release](v1.20.png)
   
-## v1.19 - Accentuate the Paw-sitive
+## v1.19 - Accentuate The Paw-sitive
 ![Accentuate the Paw-sitive](v1.19.png)
 
-## v1.18 - Fit & Finish 
-### A Bit Quarky
+## v1.18 - A Bit Quarky
 ![A Bit Quarky](v1.18.png)
 
-## v1.16 - Custom Resources, Overhauled Metrics, and Volume Extensions
-![noname](v1.16.png)
+## v1.17 - The Chillest Release
+![The Chillest Release](v1.17.png)
 
+## v1.16 - Unlimited Breadsticks For All
+![Unlimited Breadsticks For All](v1.16.png)
+
+## v1.15 - The Persevering Release
+![The Persevering Release](v1.15.png)
+
+## v1.14 - Caturnetes
+![Caturnetes](v1.14.png)
+
+## v1.13 - Angel Release
+![Angel Release](v1.13.png)
+
+## v1.12 - A next iteration in the evolving stable distributed system 
+![A next iteration in the evolving stable distributed system](v1.12.png)
+
+## v1.11 - Eleventy-One: A Long-Expected Release
+![Eleventy-One: A Long-Expected Release](v1.11.png)
