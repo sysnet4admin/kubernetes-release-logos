@@ -1,6 +1,9 @@
 # [kubernetes release logos](https://github.com/kubernetes/sig-release/tree/master/releases)
 ---
-## v1.27 - Chill Vibes
+## v1.28 - Planternetes
+![Planternetes](v1.28.png)
+#
+# v1.27 - Chill Vibes
 ![Chill Vibes](v1.27.png)
 
 ## v1.26 - Electrifying
