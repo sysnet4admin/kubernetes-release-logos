@@ -1,7 +1,7 @@
 # [kubernetes release logos](https://github.com/kubernetes/sig-release/tree/master/releases)
 ---
 ## v1.29 - Mandala
-![Mandala](v1.28.png)
+![Mandala](v1.29.png)
 
 ## v1.28 - Planternetes
 ![Planternetes](v1.28.png)
