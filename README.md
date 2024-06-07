@@ -1,5 +1,8 @@
 # [kubernetes release logos](https://github.com/kubernetes/sig-release/tree/master/releases)
 ---
+## v1.30 - Uwubernetes
+![Uwubernetes](v1.30.png)
+
 ## v1.29 - Mandala
 ![Mandala](v1.29.png)
 
