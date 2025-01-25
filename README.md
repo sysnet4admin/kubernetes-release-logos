@@ -1,5 +1,9 @@
 # [kubernetes release logos](https://github.com/kubernetes/sig-release/tree/master/releases)
 ---
+
+## v1.31 - Elli
+![Elli](v1.31.png)
+
 ## v1.30 - Uwubernetes
 ![Uwubernetes](v1.30.png)
 
