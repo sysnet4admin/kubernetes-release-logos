@@ -1,6 +1,9 @@
 # [kubernetes release logos](https://github.com/kubernetes/sig-release/tree/master/releases)
 ---
 
+## v1.32 - Penelope
+![Penelope](v1.32.png)
+
 ## v1.31 - Elli
 ![Elli](v1.31.png)
 
