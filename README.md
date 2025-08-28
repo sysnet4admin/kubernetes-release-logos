@@ -1,7 +1,7 @@
 # [kubernetes release logos](https://github.com/kubernetes/sig-release/tree/master/releases)
 ---
 ## v1.34 - O'WaW
-![O'WaW](v1.34.svg)
+![O'WaW](v1.34.png)
 
 ## v1.33 - Octarine
 ![Octarine](v1.33.svg)
