@@ -1,6 +1,9 @@
 # [kubernetes release logos](https://github.com/kubernetes/sig-release/tree/master/releases)
 ---
 
+## v1.36 - Haru
+![Haru](v1.36.svg)
+
 ## v1.33 - Octarine
 ![Octarine](v1.33.svg)
 
