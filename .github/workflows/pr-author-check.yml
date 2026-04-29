@@ -1,0 +1,85 @@
+name: PR author check
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  check-authors:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Detect bot-authored commits and comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # Bots permitted to author commits in this repo (extend as needed)
+          ALLOWED='dependabot\[bot\]|github-actions\[bot\]|renovate\[bot\]'
+
+          flagged=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/commits" --paginate \
+            --jq '.[] | "\(.sha[0:7])|\(.commit.author.name)|\(.commit.author.email)"' \
+            | awk -F'|' -v allowed="^(${ALLOWED})$" '
+                $2 ~ /\[bot\]$/ && $2 !~ allowed { print }
+              ')
+
+          marker='<!-- pr-author-check -->'
+
+          existing=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.body | contains(\"${marker}\")) | .id" | head -1)
+
+          if [ -z "$flagged" ]; then
+            echo "No bot-authored commits found."
+            if [ -n "$existing" ]; then
+              gh api -X PATCH "repos/${REPO}/issues/comments/${existing}" \
+                -f body="${marker}"$'\n'"All commits are authored by humans. Thanks!" >/dev/null
+            fi
+            exit 0
+          fi
+
+          formatted=$(echo "$flagged" | awk -F'|' '{ printf "- `%s` author: `%s` <%s>\n", $1, $2, $3 }')
+
+          body=$(cat <<EOF
+          ${marker}
+          ## Bot-authored commits detected
+
+          The following commit(s) in this PR are authored by an AI tool / bot account rather than by you:
+
+          ${formatted}
+
+          When this PR is merged, that bot identity gets recorded in this repository's Contributors list and is hard to remove (it requires a manual cache rebuild via GitHub Support).
+
+          Please re-author these commits to yourself before merging:
+
+          \`\`\`bash
+          # For the most recent commit:
+          git commit --amend --reset-author --no-edit
+
+          # For multiple commits (replace <base> with your branch's base, e.g. origin/main):
+          git rebase <base> --exec 'git commit --amend --reset-author --no-edit'
+
+          git push --force-with-lease
+          \`\`\`
+
+          Then verify with: \`git log --format='%an <%ae>' -n 5\`
+
+          See [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md#a-note-on-ai-assisted-contributions) for details. Thanks!
+          EOF
+          )
+
+          if [ -n "$existing" ]; then
+            echo "Updating existing comment ${existing}"
+            gh api -X PATCH "repos/${REPO}/issues/comments/${existing}" -f body="$body" >/dev/null
+          else
+            echo "Posting new comment"
+            gh pr comment "$PR_NUMBER" --body "$body"
+          fi
+
+          # Fail the check so the warning shows red on the PR
+          echo "Bot-authored commits found - failing check to surface the warning."
+          exit 1
