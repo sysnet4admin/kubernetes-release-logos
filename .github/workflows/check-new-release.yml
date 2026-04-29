@@ -1,0 +1,126 @@
+name: Check for new Kubernetes release
+
+on:
+  schedule:
+    - cron: '17 9 * * *'  # daily at 09:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find latest stable Kubernetes minor release
+        id: k8s
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          latest_tag=$(gh api repos/kubernetes/kubernetes/releases --paginate \
+            --jq '.[] | select(.prerelease==false and .draft==false) | .tag_name' \
+            | grep -E '^v[0-9]+\.[0-9]+\.0$' \
+            | sort -V | tail -1)
+          minor=$(echo "$latest_tag" | sed -E 's/^v([0-9]+\.[0-9]+)\.0$/\1/')
+          echo "tag=$latest_tag"   >> "$GITHUB_OUTPUT"
+          echo "minor=$minor"      >> "$GITHUB_OUTPUT"
+
+      - name: Skip if README already lists this version
+        id: check
+        run: |
+          if grep -qE "^## v${{ steps.k8s.outputs.minor }} " README.md; then
+            echo "needs_update=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "needs_update=true"  >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Best-effort lookup of blog post and codename
+        if: steps.check.outputs.needs_update == 'true'
+        id: blog
+        run: |
+          set -uo pipefail
+          minor="${{ steps.k8s.outputs.minor }}"
+          slug=$(echo "$minor" | tr '.' '-')
+          blog_url=$(curl -sL https://kubernetes.io/blog/ \
+            | grep -oE "/blog/[0-9]+/[0-9]+/[0-9]+/kubernetes-v${slug}-release/?" \
+            | head -1 | sed 's|^|https://kubernetes.io|')
+          codename="TBD"
+          if [ -n "$blog_url" ]; then
+            codename=$(curl -sL "$blog_url" \
+              | grep -oE "Kubernetes v${minor}: [A-Za-z][A-Za-z0-9 -]+" \
+              | head -1 | sed -E "s/^Kubernetes v${minor}: //" | xargs || true)
+            [ -z "$codename" ] && codename="TBD"
+          else
+            blog_url="(not found — check https://kubernetes.io/blog/)"
+          fi
+          echo "url=$blog_url"      >> "$GITHUB_OUTPUT"
+          echo "codename=$codename" >> "$GITHUB_OUTPUT"
+
+      - name: Insert placeholder entry into README
+        if: steps.check.outputs.needs_update == 'true'
+        run: |
+          minor="${{ steps.k8s.outputs.minor }}"
+          codename="${{ steps.blog.outputs.codename }}"
+          awk -v m="$minor" -v c="$codename" '
+            /^---$/ && !done {
+              print; print "";
+              print "## v" m " - " c;
+              print "![" c "](v" m ".svg)";
+              print "";
+              done=1; next
+            }
+            { print }
+          ' README.md > README.md.new
+          mv README.md.new README.md
+
+      - name: Open draft PR
+        if: steps.check.outputs.needs_update == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          minor="${{ steps.k8s.outputs.minor }}"
+          branch="auto/add-v${minor}-logo"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add README.md
+          git commit -m "Draft: add v${minor} placeholder entry"
+          git push -u origin "$branch"
+          gh pr create --draft \
+            --title "Add Kubernetes v${minor} release logo (draft)" \
+            --body "$(cat <<EOF
+          ## Auto-detected new Kubernetes release
+
+          - **Version**: v${minor} (tag \`${{ steps.k8s.outputs.tag }}\`)
+          - **Codename (best guess)**: ${{ steps.blog.outputs.codename }}
+          - **Blog post**: ${{ steps.blog.outputs.url }}
+
+          ### TODO before merging
+          - [ ] Download the logo SVG and commit as \`v${minor}.svg\`
+          - [ ] Verify the codename in README matches the official release name
+          - [ ] Mark this PR as ready for review
+
+          ### Logo source candidates
+          - Blog post: ${{ steps.blog.outputs.url }}
+          - sig-release: https://github.com/kubernetes/sig-release/tree/master/releases/release-${minor}
+
+          ---
+          *Opened automatically by \`.github/workflows/check-new-release.yml\`. The README entry uses placeholders — please complete the TODO list above before merging.*
+          EOF
+          )"
+
+      - name: Open issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "check-new-release workflow failed on $(date -u +%Y-%m-%d)" \
+            --body "Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          The scheduled Kubernetes release check failed. Likely causes: kubernetes.io blog HTML changed, GitHub API rate limit, or k8s release naming pattern changed. Please investigate."
