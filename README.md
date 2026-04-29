@@ -6,6 +6,9 @@
 ## v1.34 - O'WaW
 ![O'WaW](v1.34.png)
 
+## v1.36 - Haru
+![Haru](v1.36.svg)
+
 ## v1.33 - Octarine
 ![Octarine](v1.33.svg)
 
