@@ -25,7 +25,6 @@ it embeds the 400px thumbnails (about 3.8 MB total) instead.
 | `scripts/gen_gallery.py` | Builds `thumbs/` and rewrites the README gallery from `logos.tsv`. |
 | `thumbs/vX.YY.png` | 400px thumbnail, generated. Committed so the README renders. |
 | `logos/vX.YY.<ext>` | Full-resolution logo for one minor release. Added by hand. |
-| `kubernetes_release_logos.pdf` | Combined PDF of the collection. |
 | `CONTRIBUTING.md` | Human-facing contribution guide. |
 | `.github/workflows/pr-author-check.yml` | Fails a PR when commits are authored by a bot account. |
 
@@ -275,8 +274,6 @@ to skip all of this.
 - Do not re-encode, resize, or optimize the full-resolution image files. The
   committed original should be the official asset as published. Thumbnails are
   the only derived images, and the script owns them.
-- Do not touch `kubernetes_release_logos.pdf` unless asked. It is regenerated
-  manually, not per release.
 - Rebase on the latest `main` before opening a PR. New entries belong at the top,
   and a stale base puts the entry in the wrong position.
 
