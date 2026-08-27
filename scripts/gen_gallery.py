@@ -32,9 +32,25 @@ def load_rows():
         r["file"] = r["file"].strip()
         r["codename"] = r["codename"].strip()
         r["treatment"] = (r.get("treatment") or "").strip()
-        if r["treatment"] not in ("", "keyline", "reviewed"):
-            sys.exit(f"{r['version']}: unknown treatment {r['treatment']!r} "
-                     f"(expected empty, 'keyline' or 'reviewed')")
+        r["keyline"] = None
+        t = r["treatment"]
+        if t.startswith("keyline"):
+            # `keyline` uses the default width, `keyline:0.015` overrides it.
+            # Spiky silhouettes need a thinner band: at the default 0.04 the
+            # notches between v1.15's fur points fill in and the wolf goes round.
+            _, _, arg = t.partition(":")
+            if arg:
+                try:
+                    r["keyline"] = float(arg)
+                except ValueError:
+                    sys.exit(f"{r['version']}: keyline width {arg!r} is not a number")
+                if not 0 < r["keyline"] < 0.5:
+                    sys.exit(f"{r['version']}: keyline width {arg} is out of range "
+                             f"(expected a fraction between 0 and 0.5)")
+            r["treatment"] = "keyline"
+        elif t not in ("", "reviewed"):
+            sys.exit(f"{r['version']}: unknown treatment {t!r} (expected empty, "
+                     f"'reviewed', 'keyline' or 'keyline:<fraction>')")
         src = ROOT / r["file"]
         if not src.exists():
             sys.exit(f"missing image: {r['file']} (referenced by {r['version']})")
@@ -235,7 +251,8 @@ def main():
     ap.add_argument("--keep-background", action="store_true",
                     help="do not touch thumbnail backgrounds at all")
     ap.add_argument("--keyline", type=float, default=0.04,
-                    help="die-cut band width as a fraction of the logo's longest side")
+                    help="default die-cut band width, as a fraction of the logo's "
+                         "longest side; logos.tsv can override it per release")
     args = ap.parse_args()
 
     rows = load_rows()
@@ -247,7 +264,7 @@ def main():
         rebuilt, was_stripped = make_thumb(
             ROOT / r["file"], dst, args.width,
             strip=not args.keep_background,
-            keyline=args.keyline if want_keyline else 0.0)
+            keyline=(r["keyline"] or args.keyline) if want_keyline else 0.0)
         if not rebuilt:
             continue
         built += 1

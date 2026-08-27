@@ -204,10 +204,20 @@ visible on v1.31:
   wide. Building it at full resolution with a soft threshold, then downscaling,
   gives a clean anti-aliased edge.
 
-Width is `--keyline`, a fraction of the logo's longest side, default 0.04. That
-lands near the 5.5% of the reference sticker this was modelled on. The canvas is
-padded first so the band is not clipped where artwork reaches the edge, as
-v1.13's wingtips do. SVG sources are rendered at 4x before the band is added.
+Width is a fraction of the logo's longest side. The default is 0.04, near the
+5.5% of the reference sticker this was modelled on, and `--keyline` changes it
+for a whole run.
+
+**The right width depends on the artwork, so it is set per release** as
+`keyline:<fraction>`. A spiky silhouette needs a thin band: at 0.04 the notches
+between v1.15's fur points fill in and the direwolf goes round-shouldered, so it
+runs at 0.015. Simpler shapes carry the fuller band well, so v1.13, v1.17 and
+v1.31 stay on the default. When adding one, render a few widths and compare
+before picking.
+
+The canvas is padded first so the band is not clipped where artwork reaches the
+edge, as v1.13's wingtips do. SVG sources are rendered at 4x before the band is
+added.
 
 This is a judgement call, not a measurement. v1.13 is 100% low-contrast against
 GitHub's dark canvas and v1.33 is 95.5%, yet v1.33 reads fine because its lit
@@ -220,7 +230,8 @@ The `treatment` column in `logos.tsv`:
 | Value | Meaning |
 |---|---|
 | *(empty)* | Automatic handling. The script warns if the result is mostly near-black. |
-| `keyline` | Automatic handling plus the white band. Currently v1.13, v1.15, v1.17 and v1.31. |
+| `keyline` | Automatic handling plus the white band at the default width. Currently v1.13, v1.17 and v1.31. |
+| `keyline:<fraction>` | The same, with the band width overridden. Currently v1.15 at `keyline:0.015`. |
 | `reviewed` | Automatic handling; the warning has been looked at and dismissed. Currently v1.12, v1.14, v1.24, v1.33. |
 
 When a new logo lands, run the script and read what it prints. If it warns, open
