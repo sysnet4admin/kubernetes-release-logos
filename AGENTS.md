@@ -193,6 +193,22 @@ white on white and reads as a plain cut-out. Two reasons to use it: near-black
 line art that would otherwise vanish on dark (v1.13, v1.15), and logos that
 simply look better with the sticker edge (v1.17, v1.31).
 
+The band must be a *round* offset of the silhouette, built before the downscale,
+for the same reason the strip is. Two things go wrong otherwise, and both are
+visible on v1.31:
+
+- `ImageFilter.MaxFilter` dilates with a square window, so corners come out
+  square and the outline stair-steps. Blurring the alpha and thresholding it is
+  isotropic, so the offset follows the shape evenly.
+- A binary threshold on the 400px thumbnail leaves a band a few hard pixels
+  wide. Building it at full resolution with a soft threshold, then downscaling,
+  gives a clean anti-aliased edge.
+
+Width is `--keyline`, a fraction of the logo's longest side, default 0.04. That
+lands near the 5.5% of the reference sticker this was modelled on. The canvas is
+padded first so the band is not clipped where artwork reaches the edge, as
+v1.13's wingtips do. SVG sources are rendered at 4x before the band is added.
+
 This is a judgement call, not a measurement. v1.13 is 100% low-contrast against
 GitHub's dark canvas and v1.33 is 95.5%, yet v1.33 reads fine because its lit
 windows and dragon carry the shape while v1.13's dark blue wings do not. Any

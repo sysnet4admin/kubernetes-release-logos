@@ -113,68 +113,81 @@ def _strip_flat_background(im, tol: int = 26, light: int = 150,
     return True
 
 
+def _add_keyline(im, band: int):
+    """Lay a white band under the artwork, the way a die-cut sticker keeps one.
+
+    The band has to be a *round* offset of the silhouette. Dilating with
+    `ImageFilter.MaxFilter` uses a square window, so corners come out square and
+    the outline stair-steps; blurring the alpha and thresholding the result is
+    isotropic, so the offset follows the shape evenly. The threshold is soft
+    rather than binary, which leaves the band's own edge anti-aliased.
+
+    Like the background strip, this runs before the downscale. Done on the 400px
+    thumbnail the band is a handful of hard-edged pixels and reads as jagged.
+
+    The canvas is padded first so the band is not clipped where the artwork
+    reaches the edge, as v1.13's wingtips do.
+    """
+    from PIL import Image, ImageFilter
+
+    pad = band + 2
+    w, h = im.size
+    padded = Image.new("RGBA", (w + pad * 2, h + pad * 2), (255, 255, 255, 0))
+    padded.paste(im, (pad, pad))
+
+    # A step edge blurred by sigma sits at ~17/255 about 1.5*sigma outside the
+    # original boundary, so sigma = band/1.5 grows the mask by roughly `band`.
+    sigma = max(1.0, band / 1.5)
+    blurred = padded.getchannel("A").filter(ImageFilter.GaussianBlur(sigma))
+    lo, hi = 11, 23
+    halo = blurred.point(
+        lambda v: 0 if v <= lo else 255 if v >= hi else round((v - lo) * 255 / (hi - lo))
+    )
+
+    out = Image.new("RGBA", padded.size, (255, 255, 255, 0))
+    out.paste(Image.new("RGBA", padded.size, (255, 255, 255, 255)), (0, 0), halo)
+    out.alpha_composite(padded)
+    return out
+
+
 def make_thumb(src: pathlib.Path, dst: pathlib.Path, width: int,
-               strip: bool = True) -> tuple:
+               strip: bool = True, keyline: float = 0.0) -> tuple:
     """Build one thumbnail. Returns (rebuilt, background_stripped).
 
-    SVG sources go through rsvg-convert and are already transparent. Raster
-    sources are opened at full resolution, lifted off any flat white background
-    there, and only then downscaled, so the resize anti-aliases the cut edge and
-    cannot leak through a thinned outline.
+    Everything happens at the source's own resolution and the downscale comes
+    last, so the resize anti-aliases both the background cut and the keyline.
+    SVG sources are rendered large first when a keyline is wanted, for the same
+    reason.
     """
     if dst.exists() and dst.stat().st_mtime >= src.stat().st_mtime:
         return False, False
     dst.parent.mkdir(exist_ok=True)
 
-    if src.suffix.lower() == ".svg":
-        if not shutil.which("rsvg-convert"):
-            sys.exit("rsvg-convert not found (brew install librsvg)")
-        subprocess.run(["rsvg-convert", "-w", str(width), str(src), "-o", str(dst)],
-                       check=True)
-        return True, False
-
     try:
         from PIL import Image
     except ImportError:
-        sys.exit("Pillow is required for raster sources (pip install pillow)")
-    im = Image.open(src).convert("RGBA")
-    stripped = _strip_flat_background(im) if strip else False
+        sys.exit("Pillow is required (pip install pillow)")
+
+    if src.suffix.lower() == ".svg":
+        if not shutil.which("rsvg-convert"):
+            sys.exit("rsvg-convert not found (brew install librsvg)")
+        render_at = width * 4 if keyline else width
+        subprocess.run(["rsvg-convert", "-w", str(render_at), str(src), "-o", str(dst)],
+                       check=True)
+        if not keyline:
+            return True, False
+        im = Image.open(dst).convert("RGBA")
+        stripped = False
+    else:
+        im = Image.open(src).convert("RGBA")
+        stripped = _strip_flat_background(im) if strip else False
+
+    if keyline:
+        im = _add_keyline(im, max(2, round(keyline * max(im.size))))
+
     im.thumbnail((width, width), Image.LANCZOS)
     im.save(dst)
     return True, stripped
-
-
-def add_keyline(path: pathlib.Path, band: int = 5) -> bool:
-    """Lay a white band under the artwork, the way a die-cut sticker keeps one.
-
-    Some logos are near-black line art on a transparent background and all but
-    vanish against GitHub's dark canvas. A band hugging the silhouette gives
-    them an edge to read against, and on the light theme it is white on white,
-    so it looks like a plain cut-out.
-
-    This is opt-in per release via the `treatment` column in logos.tsv, not
-    automatic: whether a logo needs it is a judgement about the artwork, and the
-    measurements do not separate the cases cleanly. v1.13 is 100% low-contrast
-    against the dark canvas and v1.33 is 95.5%, yet v1.33 reads fine because its
-    lit windows and dragon carry the shape while v1.13's dark blue wings do not.
-
-    Column values: empty means automatic handling and warn if the result looks
-    unreadable, `keyline` adds the band, `reviewed` means automatic handling and
-    the warning has already been considered and dismissed.
-    """
-    try:
-        from PIL import Image, ImageFilter
-    except ImportError:
-        return False
-
-    im = Image.open(path).convert("RGBA")
-    art = im.getchannel("A").point(lambda v: 255 if v > 8 else 0)
-    halo = art.filter(ImageFilter.MaxFilter(band * 2 + 1))
-    out = Image.new("RGBA", im.size, (255, 255, 255, 0))
-    out.paste((255, 255, 255, 255), (0, 0), halo)
-    out.alpha_composite(im)
-    out.save(path)
-    return True
 
 
 def warn_if_unreadable(path: pathlib.Path, version: str, max_dark: float = 0.60) -> None:
@@ -221,8 +234,8 @@ def main():
     ap.add_argument("--display-width", type=int, default=240, help="<img width> in README")
     ap.add_argument("--keep-background", action="store_true",
                     help="do not touch thumbnail backgrounds at all")
-    ap.add_argument("--keyline", type=int, default=5,
-                    help="width in px of the die-cut band for treatment=keyline rows")
+    ap.add_argument("--keyline", type=float, default=0.04,
+                    help="die-cut band width as a fraction of the logo's longest side")
     args = ap.parse_args()
 
     rows = load_rows()
@@ -230,19 +243,19 @@ def main():
     for r in rows:
         dst = THUMBS / f"{r['version']}.png"
         treatment = r["treatment"]
-        rebuilt, was_stripped = make_thumb(ROOT / r["file"], dst, args.width,
-                                           strip=not args.keep_background)
+        want_keyline = treatment == "keyline" and not args.keep_background
+        rebuilt, was_stripped = make_thumb(
+            ROOT / r["file"], dst, args.width,
+            strip=not args.keep_background,
+            keyline=args.keyline if want_keyline else 0.0)
         if not rebuilt:
             continue
         built += 1
         if was_stripped:
             stripped += 1
-        if args.keep_background:
-            continue
-        if treatment == "keyline":
-            add_keyline(dst, args.keyline)
+        if want_keyline:
             keylined += 1
-        elif not treatment:
+        elif not treatment and not args.keep_background:
             warn_if_unreadable(dst, r["version"])
 
     text = README.read_text()
