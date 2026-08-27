@@ -1,86 +1,60 @@
 # [kubernetes release logos](https://github.com/kubernetes/sig-release/tree/master/releases)
----
 
-## v1.37 - Garhwal
-![Garhwal](v1.37.svg)
+Every Kubernetes minor release logo, newest first. Click a thumbnail to open the full-resolution original.
 
-## v1.36 - Haru
-![Haru](v1.36.svg)
+The gallery below is generated from [`logos.tsv`](logos.tsv) by [`scripts/gen_gallery.py`](scripts/gen_gallery.py). Edit the TSV, not this section.
 
-## v1.35 - Timbernetes
-![Timbernetes](v1.35.svg)
-
-## v1.34 - O'WaW
-![O'WaW](v1.34.png)
-
-## v1.33 - Octarine
-![Octarine](v1.33.svg)
-
-## v1.32 - Penelope
-![Penelope](v1.32.png)
-
-## v1.31 - Elli
-![Elli](v1.31.png)
-
-## v1.30 - Uwubernetes
-![Uwubernetes](v1.30.png)
-
-## v1.29 - Mandala
-![Mandala](v1.29.png)
-
-## v1.28 - Planternetes
-![Planternetes](v1.28.png)
-
-## v1.27 - Chill Vibes
-![Chill Vibes](v1.27.png)
-
-## v1.26 - Electrifying
-![Electrifying](v1.26.png)
-
-## v1.25 - Combiner
-![Combiner](v1.25.png)
-
-## v1.24 - Stargazer
-![Stargazer](v1.24.svg)
-
-## v1.23 - The Next Frontier
-![The Next Frontier](v1.23.png)
-
-## v1.22 - Reaching New Peaks
-![Reaching New Peaks](v1.22.png)
-
-## v1.21 - Power to the Community
-![Power to the Community](v1.21.png)
-
-## v1.20 - The Raddest Release
-![The Raddest Release](v1.20.png)
-
-## v1.19 - Accentuate The Paw-sitive
-![Accentuate The Paw-sitive](v1.19.png)
-
-## v1.18 - A Bit Quarky
-![A Bit Quarky](v1.18.png)
-
-## v1.17 - The Chillest Release
-![The Chillest Release](v1.17.png)
-
-## v1.16 - Unlimited Breadsticks For All
-![Unlimited Breadsticks For All](v1.16.png)
-
-## v1.15 - The Persevering Release
-![The Persevering Release](v1.15.jpeg)
-
-## v1.14 - Caturnetes
-![Caturnetes](v1.14.jpeg)
-
-## v1.13 - Angel Release
-![Angel Release](v1.13.png)
-
-## v1.12 - A next iteration in the evolving stable distributed system
-![A next iteration in the evolving stable distributed system](v1.12.png)
-
-## v1.11 - Eleventy-One: A Long-Expected Release
-![Eleventy-One: A Long-Expected Release](v1.11.png)
-
-## v1.10 - Left Shark
-![Left Shark](v1.10.png)
+<!-- gallery:start -->
+<table>
+  <tr>
+    <td align="center" width="33%"><a href="v1.37.svg"><img src="thumbs/v1.37.png" width="240" alt="Garhwal"></a><br><b>v1.37</b><br>Garhwal</td>
+    <td align="center" width="33%"><a href="v1.36.svg"><img src="thumbs/v1.36.png" width="240" alt="Haru"></a><br><b>v1.36</b><br>Haru</td>
+    <td align="center" width="33%"><a href="v1.35.svg"><img src="thumbs/v1.35.png" width="240" alt="Timbernetes"></a><br><b>v1.35</b><br>Timbernetes</td>
+  </tr>
+  <tr>
+    <td align="center" width="33%"><a href="v1.34.png"><img src="thumbs/v1.34.png" width="240" alt="O&#x27;WaW"></a><br><b>v1.34</b><br>O'WaW</td>
+    <td align="center" width="33%"><a href="v1.33.svg"><img src="thumbs/v1.33.png" width="240" alt="Octarine"></a><br><b>v1.33</b><br>Octarine</td>
+    <td align="center" width="33%"><a href="v1.32.png"><img src="thumbs/v1.32.png" width="240" alt="Penelope"></a><br><b>v1.32</b><br>Penelope</td>
+  </tr>
+  <tr>
+    <td align="center" width="33%"><a href="v1.31.png"><img src="thumbs/v1.31.png" width="240" alt="Elli"></a><br><b>v1.31</b><br>Elli</td>
+    <td align="center" width="33%"><a href="v1.30.png"><img src="thumbs/v1.30.png" width="240" alt="Uwubernetes"></a><br><b>v1.30</b><br>Uwubernetes</td>
+    <td align="center" width="33%"><a href="v1.29.png"><img src="thumbs/v1.29.png" width="240" alt="Mandala"></a><br><b>v1.29</b><br>Mandala</td>
+  </tr>
+  <tr>
+    <td align="center" width="33%"><a href="v1.28.png"><img src="thumbs/v1.28.png" width="240" alt="Planternetes"></a><br><b>v1.28</b><br>Planternetes</td>
+    <td align="center" width="33%"><a href="v1.27.png"><img src="thumbs/v1.27.png" width="240" alt="Chill Vibes"></a><br><b>v1.27</b><br>Chill Vibes</td>
+    <td align="center" width="33%"><a href="v1.26.png"><img src="thumbs/v1.26.png" width="240" alt="Electrifying"></a><br><b>v1.26</b><br>Electrifying</td>
+  </tr>
+  <tr>
+    <td align="center" width="33%"><a href="v1.25.png"><img src="thumbs/v1.25.png" width="240" alt="Combiner"></a><br><b>v1.25</b><br>Combiner</td>
+    <td align="center" width="33%"><a href="v1.24.svg"><img src="thumbs/v1.24.png" width="240" alt="Stargazer"></a><br><b>v1.24</b><br>Stargazer</td>
+    <td align="center" width="33%"><a href="v1.23.png"><img src="thumbs/v1.23.png" width="240" alt="The Next Frontier"></a><br><b>v1.23</b><br>The Next Frontier</td>
+  </tr>
+  <tr>
+    <td align="center" width="33%"><a href="v1.22.png"><img src="thumbs/v1.22.png" width="240" alt="Reaching New Peaks"></a><br><b>v1.22</b><br>Reaching New Peaks</td>
+    <td align="center" width="33%"><a href="v1.21.png"><img src="thumbs/v1.21.png" width="240" alt="Power to the Community"></a><br><b>v1.21</b><br>Power to the Community</td>
+    <td align="center" width="33%"><a href="v1.20.png"><img src="thumbs/v1.20.png" width="240" alt="The Raddest Release"></a><br><b>v1.20</b><br>The Raddest Release</td>
+  </tr>
+  <tr>
+    <td align="center" width="33%"><a href="v1.19.png"><img src="thumbs/v1.19.png" width="240" alt="Accentuate The Paw-sitive"></a><br><b>v1.19</b><br>Accentuate The Paw-sitive</td>
+    <td align="center" width="33%"><a href="v1.18.png"><img src="thumbs/v1.18.png" width="240" alt="A Bit Quarky"></a><br><b>v1.18</b><br>A Bit Quarky</td>
+    <td align="center" width="33%"><a href="v1.17.png"><img src="thumbs/v1.17.png" width="240" alt="The Chillest Release"></a><br><b>v1.17</b><br>The Chillest Release</td>
+  </tr>
+  <tr>
+    <td align="center" width="33%"><a href="v1.16.png"><img src="thumbs/v1.16.png" width="240" alt="Unlimited Breadsticks For All"></a><br><b>v1.16</b><br>Unlimited Breadsticks For All</td>
+    <td align="center" width="33%"><a href="v1.15.jpeg"><img src="thumbs/v1.15.png" width="240" alt="The Persevering Release"></a><br><b>v1.15</b><br>The Persevering Release</td>
+    <td align="center" width="33%"><a href="v1.14.jpeg"><img src="thumbs/v1.14.png" width="240" alt="Caturnetes"></a><br><b>v1.14</b><br>Caturnetes</td>
+  </tr>
+  <tr>
+    <td align="center" width="33%"><a href="v1.13.png"><img src="thumbs/v1.13.png" width="240" alt="Angel Release"></a><br><b>v1.13</b><br>Angel Release</td>
+    <td align="center" width="33%"><a href="v1.12.png"><img src="thumbs/v1.12.png" width="240" alt="A next iteration in the evolving stable distributed system"></a><br><b>v1.12</b><br>A next iteration in the evolving stable distributed system</td>
+    <td align="center" width="33%"><a href="v1.11.png"><img src="thumbs/v1.11.png" width="240" alt="Eleventy-One: A Long-Expected Release"></a><br><b>v1.11</b><br>Eleventy-One: A Long-Expected Release</td>
+  </tr>
+  <tr>
+    <td align="center" width="33%"><a href="v1.10.png"><img src="thumbs/v1.10.png" width="240" alt="Left Shark"></a><br><b>v1.10</b><br>Left Shark</td>
+    <td align="center" width="33%"></td>
+    <td align="center" width="33%"></td>
+  </tr>
+</table>
+<!-- gallery:end -->
