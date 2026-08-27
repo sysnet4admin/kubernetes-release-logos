@@ -44,66 +44,39 @@ def load_rows():
     return sorted(rows, key=key, reverse=True)
 
 
-def make_thumb(src: pathlib.Path, dst: pathlib.Path, width: int) -> bool:
-    """Return True if the thumbnail was (re)built."""
-    if dst.exists() and dst.stat().st_mtime >= src.stat().st_mtime:
-        return False
-    dst.parent.mkdir(exist_ok=True)
-    if src.suffix.lower() == ".svg":
-        if not shutil.which("rsvg-convert"):
-            sys.exit("rsvg-convert not found (brew install librsvg)")
-        subprocess.run(
-            ["rsvg-convert", "-w", str(width), str(src), "-o", str(dst)], check=True
-        )
-    else:
-        if not shutil.which("sips"):
-            sys.exit("sips not found (this path expects macOS)")
-        subprocess.run(
-            ["sips", "-s", "format", "png", "-Z", str(width), str(src), "--out", str(dst)],
-            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        )
-    return True
+def _strip_flat_background(im, tol: int = 26, light: int = 150,
+                           min_removed: float = 0.15) -> bool:
+    """Lift an image off the flat white it was flattened onto upstream, in place.
 
+    A few release logos are baked onto opaque white, which reads as a bright box
+    on GitHub's dark theme. The background is found by flooding inward from the
+    border through *light* pixels only, so the artwork's own outline stops it and
+    white inside the drawing is never reached.
 
-def strip_flat_background(path: pathlib.Path, tol: int = 26, light: int = 150,
-                          min_removed: float = 0.15) -> bool:
-    """Lift a thumbnail off the flat white it was flattened onto upstream.
+    This must run at full resolution. Downscaling first thins dark outlines and
+    lightens them by averaging, which opens a one-pixel leak: on the 400px
+    version of v1.31 the flood slipped through the dog's outline and ate the
+    white chest fur and part of the sailor hat.
 
-    Most release logos ship with an alpha channel; a few are baked onto opaque
-    white, which reads as a bright box on GitHub's dark theme.
-
-    The background is found by flooding inward from the border through *light*
-    pixels only, so white inside the artwork (Elli's sailor hat, the capybara's
-    cap) is never reached. Each pixel in that region is un-matted rather than
-    simply cleared: treating it as artwork composited over white,
-    `a = 1 - min(r,g,b)/255` recovers the coverage and the colour is
-    un-premultiplied, so anti-aliased edges stay soft. A plain binary cut-out
-    leaves a pale fringe along every edge, which on a dark canvas is worse than
-    the white box it replaced.
+    Pixels in the background region are un-matted rather than cleared: treating
+    each as artwork composited over white, `a = 1 - min(r,g,b)/255` recovers the
+    coverage and the colour is un-premultiplied. Downscaling afterwards then
+    anti-aliases the cut edge for free.
 
     Returns False, changing nothing, when the border is not white (v1.14 and
     v1.20 sit on dark navy that is part of the illustration), when the artwork
-    fills the frame (v1.11's pencil sketch leaves only 55% of the border white),
-    or when the flood barely moves (v1.12's grid lines block it at 2.7%).
-
-    The full-resolution original is never touched, only the generated thumbnail.
+    fills the frame (v1.11 is a pencil sketch whose paper is the drawing), or
+    when the flood barely moves.
     """
-    try:
-        from PIL import Image
-    except ImportError:
-        return False
-
-    im = Image.open(path).convert("RGBA")
     w, h = im.size
     px = im.load()
-
     edge = ([(x, 0) for x in range(w)] + [(x, h - 1) for x in range(w)]
             + [(0, y) for y in range(h)] + [(w - 1, y) for y in range(h)])
     white_edge = [xy for xy in edge if px[xy][3] >= 250 and min(px[xy][:3]) >= 255 - tol]
     if not any(px[xy][3] >= 250 for xy in edge):
-        return False                       # already transparent
+        return False
     if len(white_edge) < len(edge) * 0.6:
-        return False                       # coloured backdrop, or art fills the frame
+        return False
 
     seen = bytearray(w * h)
     dq = collections.deque(white_edge)
@@ -115,7 +88,7 @@ def strip_flat_background(path: pathlib.Path, tol: int = 26, light: int = 150,
             continue
         r, g, b, a = px[x, y]
         if a < 250 or min(r, g, b) < light:
-            continue                       # artwork blocks the flood
+            continue
         seen[i] = 1
         region.append((x, y))
         if x > 0: dq.append((x - 1, y))
@@ -124,7 +97,7 @@ def strip_flat_background(path: pathlib.Path, tol: int = 26, light: int = 150,
         if y < h - 1: dq.append((x, y + 1))
 
     if len(region) < w * h * min_removed:
-        return False                       # flood blocked; leave the thumbnail as built
+        return False
 
     for x, y in region:
         r, g, b, _ = px[x, y]
@@ -137,8 +110,38 @@ def strip_flat_background(path: pathlib.Path, tol: int = 26, light: int = 150,
                         min(255, max(0, round((g - inv) / a))),
                         min(255, max(0, round((b - inv) / a))),
                         round(a * 255))
-    im.save(path)
     return True
+
+
+def make_thumb(src: pathlib.Path, dst: pathlib.Path, width: int,
+               strip: bool = True) -> tuple:
+    """Build one thumbnail. Returns (rebuilt, background_stripped).
+
+    SVG sources go through rsvg-convert and are already transparent. Raster
+    sources are opened at full resolution, lifted off any flat white background
+    there, and only then downscaled, so the resize anti-aliases the cut edge and
+    cannot leak through a thinned outline.
+    """
+    if dst.exists() and dst.stat().st_mtime >= src.stat().st_mtime:
+        return False, False
+    dst.parent.mkdir(exist_ok=True)
+
+    if src.suffix.lower() == ".svg":
+        if not shutil.which("rsvg-convert"):
+            sys.exit("rsvg-convert not found (brew install librsvg)")
+        subprocess.run(["rsvg-convert", "-w", str(width), str(src), "-o", str(dst)],
+                       check=True)
+        return True, False
+
+    try:
+        from PIL import Image
+    except ImportError:
+        sys.exit("Pillow is required for raster sources (pip install pillow)")
+    im = Image.open(src).convert("RGBA")
+    stripped = _strip_flat_background(im) if strip else False
+    im.thumbnail((width, width), Image.LANCZOS)
+    im.save(dst)
+    return True, stripped
 
 
 def add_keyline(path: pathlib.Path, band: int = 5) -> bool:
@@ -226,14 +229,16 @@ def main():
     built = stripped = keylined = 0
     for r in rows:
         dst = THUMBS / f"{r['version']}.png"
-        if not make_thumb(ROOT / r["file"], dst, args.width):
+        treatment = r["treatment"]
+        rebuilt, was_stripped = make_thumb(ROOT / r["file"], dst, args.width,
+                                           strip=not args.keep_background)
+        if not rebuilt:
             continue
         built += 1
-        treatment = r["treatment"]
+        if was_stripped:
+            stripped += 1
         if args.keep_background:
             continue
-        if strip_flat_background(dst):
-            stripped += 1
         if treatment == "keyline":
             add_keyline(dst, args.keyline)
             keylined += 1

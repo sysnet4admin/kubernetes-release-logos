@@ -92,8 +92,8 @@ Use the plain ASCII codename from the post title. Some releases carry a
 non-Latin gloss in the post body (v1.37 "Garhwal (गढ़वाल)"); `logos.tsv` uses the
 Latin form only, matching every existing entry.
 
-Requirements: `rsvg-convert` (`brew install librsvg`) for SVG sources, and `sips`
-for raster sources, which ships with macOS.
+Requirements: Pillow, plus `rsvg-convert` (`brew install librsvg`) for SVG
+sources. Raster sources go through Pillow alone, so this path is portable.
 
 ### Where the best asset lives (audited 2026-08-27)
 
@@ -161,24 +161,33 @@ an old commit.
 `gen_gallery.py` adjusts `thumbs/` so logos read on GitHub's dark theme as well
 as its light one. It never touches the full-resolution original.
 
-**Background removal is automatic.** A few logos are flattened onto opaque white
-upstream, which reads as a bright box on a dark canvas. The script floods inward
-from the border through light pixels only, so white *inside* the artwork
-survives (Elli's sailor hat, the capybara's cap). Pixels in that region are
-un-matted rather than cleared: treating each as artwork composited over white,
-`a = 1 - min(r,g,b)/255` recovers the coverage and the colour is
-un-premultiplied, so anti-aliased edges stay soft. A binary cut-out instead
-leaves a pale fringe along every edge, which on dark is worse than the white box.
+**Background removal is automatic, and runs at full resolution.** A few logos are
+flattened onto opaque white upstream, which reads as a bright box on a dark
+canvas. The script floods inward from the border through light pixels only, so
+the artwork's own outline stops it and white inside the drawing survives.
+
+Order matters here, and getting it wrong is subtle. Stripping the 400px
+thumbnail instead of the original punched holes in the artwork: downscaling
+thins dark outlines and lightens them by averaging, which opened a one-pixel
+leak in v1.31's dog, and the flood poured through and ate the white chest fur
+and part of the sailor hat. Strip first, resize second. The resize then
+anti-aliases the cut edge for free.
+
+Pixels in the background region are un-matted rather than cleared: treating each
+as artwork composited over white, `a = 1 - min(r,g,b)/255` recovers the coverage
+and the colour is un-premultiplied. A binary cut-out instead leaves a pale
+fringe along every edge, which on dark is worse than the white box.
 
 It backs out on its own when the border is not white (v1.14 and v1.20 sit on
 dark navy that is part of the illustration) or when the artwork fills the frame
 (v1.11 is a pencil sketch whose paper is the drawing, leaving only 55% of the
 border white).
 
-**Keylines are opt-in, per release.** Near-black line art on a transparent
-background all but vanishes on dark. `treatment=keyline` lays a white band under
+**Keylines are opt-in, per release.** `treatment=keyline` lays a white band under
 the silhouette, the way a die-cut sticker keeps one; on the light theme it is
-white on white and reads as a plain cut-out.
+white on white and reads as a plain cut-out. Two reasons to use it: near-black
+line art that would otherwise vanish on dark (v1.13, v1.15), and logos that
+simply look better with the sticker edge (v1.17, v1.31).
 
 This is a judgement call, not a measurement. v1.13 is 100% low-contrast against
 GitHub's dark canvas and v1.33 is 95.5%, yet v1.33 reads fine because its lit
@@ -191,11 +200,14 @@ The `treatment` column in `logos.tsv`:
 | Value | Meaning |
 |---|---|
 | *(empty)* | Automatic handling. The script warns if the result is mostly near-black. |
-| `keyline` | Automatic handling plus the white band. Currently v1.13 and v1.15. |
+| `keyline` | Automatic handling plus the white band. Currently v1.13, v1.15, v1.17 and v1.31. |
 | `reviewed` | Automatic handling; the warning has been looked at and dismissed. Currently v1.12, v1.14, v1.24, v1.33. |
 
 When a new logo lands, run the script and read what it prints. If it warns, open
 the thumbnail on a dark background and decide between `keyline` and `reviewed`.
+Composite the thumbnail over magenta as well: a hole punched in the artwork is
+invisible on white and easy to miss on dark, but obvious against a colour the
+logo does not contain.
 Use `--keyline N` to change the band width (default 5px) and `--keep-background`
 to skip all of this.
 
@@ -206,8 +218,8 @@ to skip all of this.
 - `check-new-release.yml` writes a placeholder row with a `.svg` extension and
   does not commit an image. `gen_gallery.py` fails with `missing image: ...`
   until the real file lands, which is the intended signal, not a bug.
-- Thumbnail generation is not wired into CI. The raster path uses `sips`, which
-  is macOS-only, so a CI step would need an ImageMagick fallback first.
+- Thumbnail generation is not wired into CI, though nothing blocks it any more:
+  the raster path is pure Pillow, and only SVG sources need `rsvg-convert`.
 
 ## Rules for agents
 

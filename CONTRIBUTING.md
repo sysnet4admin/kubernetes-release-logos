@@ -25,9 +25,8 @@ dark background. Near-black line art can disappear on GitHub's dark theme; set
 the fourth field to `keyline` to give it a white die-cut band, or to `reviewed`
 if it reads fine as is.
 
-Generating thumbnails needs `rsvg-convert` (`brew install librsvg`) for SVG
-sources and `sips` for raster ones, which ships with macOS. Background handling
-also needs Pillow.
+Generating thumbnails needs Pillow, plus `rsvg-convert` (`brew install librsvg`)
+if the logo is an SVG.
 
 ## Before opening a PR
 
