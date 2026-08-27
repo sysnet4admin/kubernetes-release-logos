@@ -33,8 +33,15 @@ def load_rows():
         r["codename"] = r["codename"].strip()
         r["treatment"] = (r.get("treatment") or "").strip()
         r["keyline"] = None
+        r["keyline_sharp"] = False
         t = r["treatment"]
         if t.startswith("keyline"):
+            if t.split(":")[0] == "keyline-sharp":
+                r["keyline_sharp"] = True
+            elif t.split(":")[0] != "keyline":
+                sys.exit(f"{r['version']}: unknown treatment {t!r} (expected empty, "
+                         f"'reviewed', 'keyline[:<fraction>]' or "
+                         f"'keyline-sharp[:<fraction>]')")
             # `keyline` uses the default width, `keyline:0.015` overrides it.
             # Spiky silhouettes need a thinner band: at the default 0.04 the
             # notches between v1.15's fur points fill in and the wolf goes round.
@@ -50,7 +57,8 @@ def load_rows():
             r["treatment"] = "keyline"
         elif t not in ("", "reviewed"):
             sys.exit(f"{r['version']}: unknown treatment {t!r} (expected empty, "
-                     f"'reviewed', 'keyline' or 'keyline:<fraction>')")
+                     f"'reviewed', 'keyline[:<fraction>]' or "
+                     f"'keyline-sharp[:<fraction>]')")
         src = ROOT / r["file"]
         if not src.exists():
             sys.exit(f"missing image: {r['file']} (referenced by {r['version']})")
@@ -129,14 +137,21 @@ def _strip_flat_background(im, tol: int = 26, light: int = 150,
     return True
 
 
-def _add_keyline(im, band: int):
+def _add_keyline(im, band: int, sharp: bool = False):
     """Lay a white band under the artwork, the way a die-cut sticker keeps one.
 
-    The band has to be a *round* offset of the silhouette. Dilating with
-    `ImageFilter.MaxFilter` uses a square window, so corners come out square and
-    the outline stair-steps; blurring the alpha and thresholding the result is
-    isotropic, so the offset follows the shape evenly. The threshold is soft
-    rather than binary, which leaves the band's own edge anti-aliased.
+Two offset shapes, because the right one depends on the silhouette:
+
+    - round (default): blur the alpha and threshold it. The blur is isotropic, so
+      the band follows the shape evenly and every corner comes out curved. Right
+      for organic outlines like v1.31's dog.
+    - sharp: dilate with `ImageFilter.MaxFilter`, a square window, which keeps
+      corners angular. Right when the angles *are* the artwork: a round offset
+      blunts v1.15's fur spikes and fills the V notches between them with arcs,
+      which is exactly the character that logo is made of.
+
+    The round threshold is soft rather than binary, leaving the band's own edge
+    anti-aliased. The sharp one is binary and relies on the downscale for that.
 
     Like the background strip, this runs before the downscale. Done on the 400px
     thumbnail the band is a handful of hard-edged pixels and reads as jagged.
@@ -151,14 +166,18 @@ def _add_keyline(im, band: int):
     padded = Image.new("RGBA", (w + pad * 2, h + pad * 2), (255, 255, 255, 0))
     padded.paste(im, (pad, pad))
 
-    # A step edge blurred by sigma sits at ~17/255 about 1.5*sigma outside the
-    # original boundary, so sigma = band/1.5 grows the mask by roughly `band`.
-    sigma = max(1.0, band / 1.5)
-    blurred = padded.getchannel("A").filter(ImageFilter.GaussianBlur(sigma))
-    lo, hi = 11, 23
-    halo = blurred.point(
-        lambda v: 0 if v <= lo else 255 if v >= hi else round((v - lo) * 255 / (hi - lo))
-    )
+    alpha = padded.getchannel("A")
+    if sharp:
+        halo = alpha.filter(ImageFilter.MaxFilter(band * 2 + 1))
+    else:
+        # A step edge blurred by sigma sits at ~17/255 about 1.5*sigma outside
+        # the original boundary, so sigma = band/1.5 grows it by roughly `band`.
+        sigma = max(1.0, band / 1.5)
+        blurred = alpha.filter(ImageFilter.GaussianBlur(sigma))
+        lo, hi = 11, 23
+        halo = blurred.point(
+            lambda v: 0 if v <= lo else 255 if v >= hi else round((v - lo) * 255 / (hi - lo))
+        )
 
     out = Image.new("RGBA", padded.size, (255, 255, 255, 0))
     out.paste(Image.new("RGBA", padded.size, (255, 255, 255, 255)), (0, 0), halo)
@@ -167,7 +186,8 @@ def _add_keyline(im, band: int):
 
 
 def make_thumb(src: pathlib.Path, dst: pathlib.Path, width: int,
-               strip: bool = True, keyline: float = 0.0) -> tuple:
+               strip: bool = True, keyline: float = 0.0,
+               keyline_sharp: bool = False) -> tuple:
     """Build one thumbnail. Returns (rebuilt, background_stripped).
 
     Everything happens at the source's own resolution and the downscale comes
@@ -199,7 +219,7 @@ def make_thumb(src: pathlib.Path, dst: pathlib.Path, width: int,
         stripped = _strip_flat_background(im) if strip else False
 
     if keyline:
-        im = _add_keyline(im, max(2, round(keyline * max(im.size))))
+        im = _add_keyline(im, max(2, round(keyline * max(im.size))), keyline_sharp)
 
     im.thumbnail((width, width), Image.LANCZOS)
     im.save(dst)
@@ -264,7 +284,8 @@ def main():
         rebuilt, was_stripped = make_thumb(
             ROOT / r["file"], dst, args.width,
             strip=not args.keep_background,
-            keyline=(r["keyline"] or args.keyline) if want_keyline else 0.0)
+            keyline=(r["keyline"] or args.keyline) if want_keyline else 0.0,
+            keyline_sharp=r["keyline_sharp"])
         if not rebuilt:
             continue
         built += 1

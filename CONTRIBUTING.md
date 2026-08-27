@@ -23,8 +23,9 @@ Row order in the TSV does not matter, since the script sorts newest-first.
 If the script warns that the logo is mostly near-black, open its thumbnail on a
 dark background. Near-black line art can disappear on GitHub's dark theme; set
 the fourth field to `keyline` to give it a white die-cut band, or to `reviewed`
-if it reads fine as is. If the band swallows fine detail in the silhouette, thin
-it with `keyline:0.015` or similar.
+if it reads fine as is. If the band swallows fine detail in the
+silhouette, thin it with `keyline:0.015` or similar, and if the outline is
+angular rather than organic use `keyline-sharp` so the corners survive.
 
 Generating thumbnails needs Pillow, plus `rsvg-convert` (`brew install librsvg`)
 if the logo is an SVG.
