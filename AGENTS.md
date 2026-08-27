@@ -5,9 +5,9 @@ This is the single source of truth; `CLAUDE.md` only imports this file.
 
 ## What this repository is
 
-A flat collection of Kubernetes release logos. Each minor release has one image
-file at the repo root named `vX.YY.<ext>` (`.png`, `.svg`, or `.jpeg`), and
-`README.md` lists every release newest-first.
+A collection of Kubernetes release logos. Each minor release has one image file
+in `logos/` named `vX.YY.<ext>` (`.png`, `.svg`, or `.jpeg`), and `README.md`
+shows every release newest-first as a thumbnail gallery.
 
 There is no test suite and no package manifest. The only tooling is
 `scripts/gen_gallery.py`. Do not add a package manager or a framework.
@@ -24,7 +24,7 @@ it embeds the 400px thumbnails (about 3.8 MB total) instead.
 | `README.md` | Generated gallery. Newest release first. Do not hand-edit the gallery block. |
 | `scripts/gen_gallery.py` | Builds `thumbs/` and rewrites the README gallery from `logos.tsv`. |
 | `thumbs/vX.YY.png` | 400px thumbnail, generated. Committed so the README renders. |
-| `vX.YY.<ext>` | Full-resolution logo for one minor release, at the repo root. |
+| `logos/vX.YY.<ext>` | Full-resolution logo for one minor release. Added by hand. |
 | `kubernetes_release_logos.pdf` | Combined PDF of the collection. |
 | `CONTRIBUTING.md` | Human-facing contribution guide. |
 | `.github/workflows/check-new-release.yml` | Daily job that opens a draft PR when a new k8s minor ships. |
@@ -56,13 +56,13 @@ Read the post title there to get the codename.
 The logo lives next to the post as `k8s-v<X.YY>.svg`:
 
 ```bash
-curl -sSL -o "v${minor}.svg" "${blog_url%/}/k8s-v${minor}.svg"
+curl -sSL -o "logos/v${minor}.svg" "${blog_url%/}/k8s-v${minor}.svg"
 ```
 
 Confirm it downloaded as SVG and not an HTML error page:
 
 ```bash
-file "v${minor}.svg"   # expect: SVG Scalable Vector Graphics image
+file "logos/v${minor}.svg"   # expect: SVG Scalable Vector Graphics image
 ```
 
 If the blog does not ship an SVG, fall back to the PNG on the post or to
@@ -74,8 +74,11 @@ under `releases/release-<X.YY>/`, and name the file with the matching extension.
 Add one row to `logos.tsv`, directly under the header line:
 
 ```
-vX.YY<TAB><Codename><TAB>vX.YY.<ext>
+vX.YY<TAB><Codename><TAB>logos/vX.YY.<ext><TAB>
 ```
+
+The fourth field is the `treatment` column, described under "Thumbnail
+backgrounds" below. Leave it empty unless the thumbnail needs it.
 
 Then regenerate the thumbnail and the README gallery:
 
@@ -100,9 +103,10 @@ sources. Raster sources go through Pillow alone, so this path is portable.
 Two upstream repositories carry release logos, and neither is complete:
 
 - `kubernetes/sig-release` under `releases/release-X.YY/`. Early releases keep a
-  bare file at the top of that directory; from v1.24 on the good assets sit in a
-  `logo/` (or `logos/`) subdirectory, which is easy to miss. This is where the
-  highest-resolution and vector masters usually are.
+  bare file at the top of that directory; from v1.24 on the good assets sit in
+  that release's own `logo/` (sometimes `logos/`) subdirectory upstream, which is
+  easy to miss. That is where the highest-resolution and vector masters usually
+  are. Not to be confused with this repository's `logos/`.
 - `kubernetes/website` under `static/images/blog/<date>-...` for older posts, and
   inside the post's own page-bundle directory for v1.32 and later.
 
@@ -136,8 +140,8 @@ an old commit.
 
 **Upstream ceilings, not collection gaps:**
 
-- v1.21 is capped at 250x260 (`logos/globe_250px.png`, 40 KB), designed by Aravind
-  Sekar. It is the only asset in either repository, and the Wayback Machine shows
+- v1.21 is capped at 250x260 (upstream `release-1.21/logos/globe_250px.png`,
+  40 KB), designed by Aravind Sekar. It is the only asset in either repository, and the Wayback Machine shows
   kubernetes.io never served anything larger.
 - v1.14 and v1.15 are JPEG upstream, and their announcement posts carry no images
   at all. No PNG or vector master exists.

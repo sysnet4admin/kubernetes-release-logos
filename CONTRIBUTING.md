@@ -5,10 +5,10 @@ Thanks for helping keep this Kubernetes release logo collection up to date! This
 ## Adding a new release logo
 
 1. Download the official SVG/PNG logo from the Kubernetes release blog post or the [`sig-release`](https://github.com/kubernetes/sig-release/tree/master/releases) repository.
-2. Commit the file as `vX.YY.<ext>` (e.g. `v1.36.svg`) at the repo root.
+2. Commit the file as `logos/vX.YY.<ext>` (e.g. `logos/v1.36.svg`).
 3. Add one row to `logos.tsv` (tab-separated). The fourth field is optional:
    ```
-   vX.YY<TAB><Codename><TAB>vX.YY.<ext><TAB>
+   vX.YY<TAB><Codename><TAB>logos/vX.YY.<ext><TAB>
    ```
 4. Regenerate the thumbnail and the README gallery:
    ```bash

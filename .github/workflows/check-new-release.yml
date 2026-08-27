@@ -69,7 +69,7 @@ jobs:
           # logos.tsv is header + rows; insert the new release directly under the
           # header. The trailing empty field is the `treatment` column.
           { head -1 logos.tsv
-            printf 'v%s\t%s\tv%s.svg\t\n' "$minor" "$codename" "$minor"
+            printf 'v%s\t%s\tlogos/v%s.svg\t\n' "$minor" "$codename" "$minor"
             tail -n +2 logos.tsv
           } > logos.tsv.new
           mv logos.tsv.new logos.tsv
@@ -98,7 +98,7 @@ jobs:
           - **Blog post**: ${{ steps.blog.outputs.url }}
 
           ### TODO before merging
-          - [ ] Download the logo SVG and commit as \`v${minor}.svg\`
+          - [ ] Download the logo SVG and commit as \`logos/v${minor}.svg\`
           - [ ] Verify the codename in \`logos.tsv\` matches the official release name
           - [ ] Fix the extension in \`logos.tsv\` if the release only ships a PNG
           - [ ] Run \`python3 scripts/gen_gallery.py\` to build the thumbnail and rebuild the README gallery
