@@ -61,33 +61,39 @@ def make_thumb(src: pathlib.Path, dst: pathlib.Path, width: int) -> bool:
     return True
 
 
-def strip_flat_background(path: pathlib.Path, tol: int = 26,
-                          min_removed: float = 0.15, max_dark: float = 0.50) -> bool:
-    """Make a thumbnail's flat white background transparent.
+def strip_flat_background(path: pathlib.Path, tol: int = 26, light: int = 150,
+                          min_removed: float = 0.15, max_dark: float = 0.50,
+                          keyline: int = 5) -> str:
+    """Lift a thumbnail off the flat white it was flattened onto upstream.
 
-    Most release logos ship with an alpha channel already; a few are flattened
-    onto opaque white upstream, which reads as a bright box on a dark README.
-    This floods inward from the border only, so white *inside* the artwork
-    (Elli's sailor hat, the capybara's highlights) survives.
+    Most release logos ship with an alpha channel; a few are baked onto opaque
+    white, which reads as a bright box on GitHub's dark theme.
 
-    Three cases are deliberately left alone:
+    The background is found by flooding inward from the border through *light*
+    pixels only, so white inside the artwork (Elli's sailor hat, the capybara's
+    cap) is never reached. Each pixel in that region is un-matted rather than
+    simply cleared: treating it as the artwork composited over white,
+    `a = 1 - min(r,g,b)/255` recovers the coverage and the colour is
+    un-premultiplied. That keeps anti-aliased edges soft instead of leaving the
+    pale fringe a hard cut-out produces.
 
-    - Backgrounds that are part of the illustration. v1.14 and v1.20 sit on dark
-      navy, so the border never qualifies as white.
-    - Art that fills the frame. v1.11 is a pencil sketch whose paper is the
-      drawing; only 55% of its border is white, under the 60% gate.
-    - Fills that do not achieve much, or that would leave dark line art floating
-      on a dark canvas. v1.12's grid lines block the flood (2.7% removed) and
-      v1.15 is 85% near-black once the white is gone, invisible on GitHub's dark
-      theme. Both are reverted by `min_removed` / `max_dark`.
+    Three outcomes:
+
+    - "stripped": the background is gone and the artwork still reads.
+    - "keyline": the artwork is mostly near-black, so it would disappear on a
+      dark canvas. The background is cleared except for a white band hugging the
+      silhouette, giving the die-cut sticker look.
+    - "": nothing was changed. The border is not white (v1.14 and v1.20 sit on
+      dark navy), the artwork fills the frame (v1.11's pencil sketch covers all
+      but 55% of the border), or the flood barely moved (v1.12's grid lines
+      block it at 2.7%).
 
     The full-resolution original is never touched, only the generated thumbnail.
-    Returns True if the thumbnail was rewritten.
     """
     try:
-        from PIL import Image
+        from PIL import Image, ImageFilter
     except ImportError:
-        return False
+        return ""
 
     im = Image.open(path).convert("RGBA")
     w, h = im.size
@@ -95,39 +101,45 @@ def strip_flat_background(path: pathlib.Path, tol: int = 26,
 
     edge = ([(x, 0) for x in range(w)] + [(x, h - 1) for x in range(w)]
             + [(0, y) for y in range(h)] + [(w - 1, y) for y in range(h)])
-
-    def is_white(xy):
-        p = px[xy]
-        return p[3] >= 250 and min(p[:3]) >= 255 - tol
-
-    white_edge = [xy for xy in edge if is_white(xy)]
+    white_edge = [xy for xy in edge if px[xy][3] >= 250 and min(px[xy][:3]) >= 255 - tol]
     if not any(px[xy][3] >= 250 for xy in edge):
-        return False                      # already transparent
+        return ""                          # already transparent
     if len(white_edge) < len(edge) * 0.6:
-        return False                      # coloured backdrop, or art fills the frame
+        return ""                          # coloured backdrop, or art fills the frame
 
-    seed = px[white_edge[0]][:3]
+    original = im.copy()
     seen = bytearray(w * h)
     dq = collections.deque(white_edge)
-    removed = 0
+    region = []
     while dq:
         x, y = dq.popleft()
         i = y * w + x
         if seen[i]:
             continue
         r, g, b, a = px[x, y]
-        if a < 250 or max(abs(r - seed[0]), abs(g - seed[1]), abs(b - seed[2])) > tol:
-            continue
+        if a < 250 or min(r, g, b) < light:
+            continue                       # artwork blocks the flood
         seen[i] = 1
-        px[x, y] = (r, g, b, 0)
-        removed += 1
+        region.append((x, y))
         if x > 0: dq.append((x - 1, y))
         if x < w - 1: dq.append((x + 1, y))
         if y > 0: dq.append((x, y - 1))
         if y < h - 1: dq.append((x, y + 1))
 
-    if removed < w * h * min_removed:
-        return False                      # flood blocked; leave the thumbnail as built
+    if len(region) < w * h * min_removed:
+        return ""                          # flood blocked; leave the thumbnail as built
+
+    for x, y in region:
+        r, g, b, _ = px[x, y]
+        a = 1.0 - min(r, g, b) / 255.0     # coverage of art over white
+        if a <= 0.02:
+            px[x, y] = (r, g, b, 0)
+        else:
+            inv = (1.0 - a) * 255.0
+            px[x, y] = (min(255, max(0, round((r - inv) / a))),
+                        min(255, max(0, round((g - inv) / a))),
+                        min(255, max(0, round((b - inv) / a))),
+                        round(a * 255))
 
     opaque = dark = 0
     for y in range(h):
@@ -137,11 +149,30 @@ def strip_flat_background(path: pathlib.Path, tol: int = 26,
                 opaque += 1
                 if 0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2] < 60:
                     dark += 1
+
     if opaque and dark / opaque > max_dark:
-        return False                      # would vanish on a dark background
+        # Near-black artwork: keep a white band around the silhouette so it still
+        # reads on a dark canvas, and clear the rest.
+        art = im.getchannel("A").point(lambda v: 255 if v > 8 else 0)
+        band = art.filter(ImageFilter.MaxFilter(keyline * 2 + 1))
+        out = original.copy()
+        op = out.load()
+        bp = band.load()
+        cleared = 0
+        for x, y in region:
+            if not bp[x, y]:
+                r, g, b, _ = op[x, y]
+                op[x, y] = (r, g, b, 0)
+                cleared += 1
+        if cleared < w * h * min_removed:
+            # The band covers nearly everything, so the die-cut changes nothing
+            # visible (v1.12's grid spans the whole canvas). Leave it alone.
+            return ""
+        out.save(path)
+        return "keyline"
 
     im.save(path)
-    return True
+    return "stripped"
 
 
 def render(rows, cols, display_width):
@@ -176,13 +207,17 @@ def main():
     args = ap.parse_args()
 
     rows = load_rows()
-    built = stripped = 0
+    built = stripped = keylined = 0
     for r in rows:
         dst = THUMBS / f"{r['version']}.png"
         if make_thumb(ROOT / r["file"], dst, args.width):
             built += 1
-            if not args.keep_background and strip_flat_background(dst):
-                stripped += 1
+            if not args.keep_background:
+                mode = strip_flat_background(dst)
+                if mode == "stripped":
+                    stripped += 1
+                elif mode == "keyline":
+                    keylined += 1
 
     text = README.read_text()
     if START not in text or END not in text:
@@ -192,7 +227,7 @@ def main():
     README.write_text(f"{head}{START}\n{render(rows, args.cols, args.display_width)}\n{END}{tail}")
 
     print(f"{len(rows)} releases, {built} thumbnail(s) rebuilt, "
-          f"{stripped} background(s) made transparent")
+          f"{stripped} background(s) removed, {keylined} die-cut with a keyline")
 
 
 if __name__ == "__main__":

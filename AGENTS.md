@@ -156,6 +156,41 @@ an old commit.
   Its Devanagari numerals sit outside the viewBox and never render. The official
   300dpi PNG is kept instead, for provenance and because the script can process it.
 
+### Thumbnail backgrounds
+
+A handful of logos are flattened onto opaque white upstream, which reads as a
+bright box on GitHub's dark theme. `gen_gallery.py` lifts them off that white
+when it can. It only ever rewrites `thumbs/`, never the full-resolution original.
+
+The background is found by flooding inward from the border through light pixels
+only, so white *inside* the artwork survives (Elli's sailor hat, the capybara's
+cap). Pixels in that region are un-matted rather than cleared: treating each as
+artwork composited over white, `a = 1 - min(r,g,b)/255` recovers the coverage and
+the colour is un-premultiplied. A plain binary cut-out instead leaves a pale
+fringe along every anti-aliased edge, which is worse on a dark canvas than the
+white box was.
+
+Three outcomes, all decided automatically:
+
+| Outcome | Applies to | What happens |
+|---|---|---|
+| stripped | v1.17, v1.31 | Background gone, soft edges kept. |
+| keyline | v1.15 | Art is mostly near-black and would vanish on dark, so a white band is kept hugging the silhouette: a die-cut sticker. Invisible on the light theme. |
+| unchanged | v1.11, v1.12, v1.14, v1.20 | See below. |
+
+Left alone, and why:
+
+- v1.14 and v1.20 sit on dark navy that is part of the illustration, so their
+  border never qualifies as white.
+- v1.11 is a pencil sketch whose paper is the drawing. Only 55% of its border is
+  white, under the 60% gate.
+- v1.12's grid lines block the flood at 2.7%, and a keyline does not help either:
+  the grid spans the whole canvas, so the band covers everything. Both the
+  `min_removed` gate and the post-keyline check back it out.
+
+When a new logo lands, check the counts the script prints and look at the
+thumbnail on a dark background before committing.
+
 ### Known quirks
 
 - Logo SVGs can be large (v1.37 is 2.5 MB, animated day/night). Commit the
