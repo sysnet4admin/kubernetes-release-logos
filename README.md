@@ -1,10 +1,14 @@
 # [kubernetes release logos](https://github.com/kubernetes/sig-release/tree/master/releases)
 ---
+
+## v1.37 - Garhwal
+![Garhwal](v1.37.svg)
+
 ## v1.36 - Haru
 ![Haru](v1.36.svg)
 
 ## v1.35 - Timbernetes
-![Timbernetes](v1.35.png)
+![Timbernetes](v1.35.svg)
 
 ## v1.34 - O'WaW
 ![O'WaW](v1.34.png)
@@ -37,7 +41,7 @@
 ![Combiner](v1.25.png)
 
 ## v1.24 - Stargazer
-![Stargazer](v1.24.png)
+![Stargazer](v1.24.svg)
 
 ## v1.23 - The Next Frontier
 ![The Next Frontier](v1.23.png)
@@ -47,12 +51,12 @@
 
 ## v1.21 - Power to the Community
 ![Power to the Community](v1.21.png)
-  
+
 ## v1.20 - The Raddest Release
 ![The Raddest Release](v1.20.png)
-  
+
 ## v1.19 - Accentuate The Paw-sitive
-![Accentuate the Paw-sitive](v1.19.png)
+![Accentuate The Paw-sitive](v1.19.png)
 
 ## v1.18 - A Bit Quarky
 ![A Bit Quarky](v1.18.png)
@@ -72,7 +76,7 @@
 ## v1.13 - Angel Release
 ![Angel Release](v1.13.png)
 
-## v1.12 - A next iteration in the evolving stable distributed system 
+## v1.12 - A next iteration in the evolving stable distributed system
 ![A next iteration in the evolving stable distributed system](v1.12.png)
 
 ## v1.11 - Eleventy-One: A Long-Expected Release
@@ -80,4 +84,3 @@
 
 ## v1.10 - Left Shark
 ![Left Shark](v1.10.png)
-
