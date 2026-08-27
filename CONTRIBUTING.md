@@ -6,9 +6,9 @@ Thanks for helping keep this Kubernetes release logo collection up to date! This
 
 1. Download the official SVG/PNG logo from the Kubernetes release blog post or the [`sig-release`](https://github.com/kubernetes/sig-release/tree/master/releases) repository.
 2. Commit the file as `vX.YY.<ext>` (e.g. `v1.36.svg`) at the repo root.
-3. Add one row to `logos.tsv` (tab-separated):
+3. Add one row to `logos.tsv` (tab-separated). The fourth field is optional:
    ```
-   vX.YY<TAB><Codename><TAB>vX.YY.<ext>
+   vX.YY<TAB><Codename><TAB>vX.YY.<ext><TAB>
    ```
 4. Regenerate the thumbnail and the README gallery:
    ```bash
@@ -20,8 +20,14 @@ The README gallery between the `<!-- gallery:start -->` and `<!-- gallery:end --
 markers is generated. Edit `logos.tsv` instead; hand edits there get overwritten.
 Row order in the TSV does not matter, since the script sorts newest-first.
 
+If the script warns that the logo is mostly near-black, open its thumbnail on a
+dark background. Near-black line art can disappear on GitHub's dark theme; set
+the fourth field to `keyline` to give it a white die-cut band, or to `reviewed`
+if it reads fine as is.
+
 Generating thumbnails needs `rsvg-convert` (`brew install librsvg`) for SVG
-sources and `sips` for raster ones, which ships with macOS.
+sources and `sips` for raster ones, which ships with macOS. Background handling
+also needs Pillow.
 
 ## Before opening a PR
 

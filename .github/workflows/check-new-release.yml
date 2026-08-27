@@ -66,9 +66,10 @@ jobs:
           set -euo pipefail
           minor="${{ steps.k8s.outputs.minor }}"
           codename="${{ steps.blog.outputs.codename }}"
-          # logos.tsv is header + rows; insert the new release directly under the header
+          # logos.tsv is header + rows; insert the new release directly under the
+          # header. The trailing empty field is the `treatment` column.
           { head -1 logos.tsv
-            printf 'v%s\t%s\tv%s.svg\n' "$minor" "$codename" "$minor"
+            printf 'v%s\t%s\tv%s.svg\t\n' "$minor" "$codename" "$minor"
             tail -n +2 logos.tsv
           } > logos.tsv.new
           mv logos.tsv.new logos.tsv

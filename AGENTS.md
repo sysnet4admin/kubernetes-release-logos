@@ -158,38 +158,46 @@ an old commit.
 
 ### Thumbnail backgrounds
 
-A handful of logos are flattened onto opaque white upstream, which reads as a
-bright box on GitHub's dark theme. `gen_gallery.py` lifts them off that white
-when it can. It only ever rewrites `thumbs/`, never the full-resolution original.
+`gen_gallery.py` adjusts `thumbs/` so logos read on GitHub's dark theme as well
+as its light one. It never touches the full-resolution original.
 
-The background is found by flooding inward from the border through light pixels
-only, so white *inside* the artwork survives (Elli's sailor hat, the capybara's
-cap). Pixels in that region are un-matted rather than cleared: treating each as
-artwork composited over white, `a = 1 - min(r,g,b)/255` recovers the coverage and
-the colour is un-premultiplied. A plain binary cut-out instead leaves a pale
-fringe along every anti-aliased edge, which is worse on a dark canvas than the
-white box was.
+**Background removal is automatic.** A few logos are flattened onto opaque white
+upstream, which reads as a bright box on a dark canvas. The script floods inward
+from the border through light pixels only, so white *inside* the artwork
+survives (Elli's sailor hat, the capybara's cap). Pixels in that region are
+un-matted rather than cleared: treating each as artwork composited over white,
+`a = 1 - min(r,g,b)/255` recovers the coverage and the colour is
+un-premultiplied, so anti-aliased edges stay soft. A binary cut-out instead
+leaves a pale fringe along every edge, which on dark is worse than the white box.
 
-Three outcomes, all decided automatically:
+It backs out on its own when the border is not white (v1.14 and v1.20 sit on
+dark navy that is part of the illustration) or when the artwork fills the frame
+(v1.11 is a pencil sketch whose paper is the drawing, leaving only 55% of the
+border white).
 
-| Outcome | Applies to | What happens |
-|---|---|---|
-| stripped | v1.17, v1.31 | Background gone, soft edges kept. |
-| keyline | v1.15 | Art is mostly near-black and would vanish on dark, so a white band is kept hugging the silhouette: a die-cut sticker. Invisible on the light theme. |
-| unchanged | v1.11, v1.12, v1.14, v1.20 | See below. |
+**Keylines are opt-in, per release.** Near-black line art on a transparent
+background all but vanishes on dark. `treatment=keyline` lays a white band under
+the silhouette, the way a die-cut sticker keeps one; on the light theme it is
+white on white and reads as a plain cut-out.
 
-Left alone, and why:
+This is a judgement call, not a measurement. v1.13 is 100% low-contrast against
+GitHub's dark canvas and v1.33 is 95.5%, yet v1.33 reads fine because its lit
+windows and dragon carry the shape while v1.13's dark blue wings do not. Any
+automatic threshold that catches v1.13 also catches v1.33, so the decision lives
+in the data.
 
-- v1.14 and v1.20 sit on dark navy that is part of the illustration, so their
-  border never qualifies as white.
-- v1.11 is a pencil sketch whose paper is the drawing. Only 55% of its border is
-  white, under the 60% gate.
-- v1.12's grid lines block the flood at 2.7%, and a keyline does not help either:
-  the grid spans the whole canvas, so the band covers everything. Both the
-  `min_removed` gate and the post-keyline check back it out.
+The `treatment` column in `logos.tsv`:
 
-When a new logo lands, check the counts the script prints and look at the
-thumbnail on a dark background before committing.
+| Value | Meaning |
+|---|---|
+| *(empty)* | Automatic handling. The script warns if the result is mostly near-black. |
+| `keyline` | Automatic handling plus the white band. Currently v1.13 and v1.15. |
+| `reviewed` | Automatic handling; the warning has been looked at and dismissed. Currently v1.12, v1.14, v1.24, v1.33. |
+
+When a new logo lands, run the script and read what it prints. If it warns, open
+the thumbnail on a dark background and decide between `keyline` and `reviewed`.
+Use `--keyline N` to change the band width (default 5px) and `--keep-background`
+to skip all of this.
 
 ### Known quirks
 
