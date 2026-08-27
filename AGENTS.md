@@ -27,12 +27,12 @@ it embeds the 400px thumbnails (about 3.8 MB total) instead.
 | `logos/vX.YY.<ext>` | Full-resolution logo for one minor release. Added by hand. |
 | `kubernetes_release_logos.pdf` | Combined PDF of the collection. |
 | `CONTRIBUTING.md` | Human-facing contribution guide. |
-| `.github/workflows/check-new-release.yml` | Daily job that opens a draft PR when a new k8s minor ships. |
 | `.github/workflows/pr-author-check.yml` | Fails a PR when commits are authored by a bot account. |
 
 ## Adding a release logo
 
 This repo tracks every Kubernetes minor release, so this is a recurring task.
+Nothing detects a new release for you; watch https://kubernetes.io/blog/.
 
 ### 1. Find the release blog post
 
@@ -235,11 +235,16 @@ to skip all of this.
 
 - Logo SVGs can be large (v1.37 is 2.5 MB, animated day/night). Commit the
   original as published; the thumbnail is what the README displays.
-- `check-new-release.yml` writes a placeholder row with a `.svg` extension and
-  does not commit an image. `gen_gallery.py` fails with `missing image: ...`
-  until the real file lands, which is the intended signal, not a bug.
-- Thumbnail generation is not wired into CI, though nothing blocks it any more:
-  the raster path is pure Pillow, and only SVG sources need `rsvg-convert`.
+- `gen_gallery.py` exits with `missing image: ...` when `logos.tsv` names a file
+  that is not committed yet. That is the intended signal, not a bug.
+- Nothing runs in CI. There used to be a scheduled job that opened a draft PR
+  when a new minor shipped; it was removed on 2026-08-27 after 64 runs that
+  opened no PRs. GitHub stops scheduled workflows after 60 days without a commit,
+  and this repo goes about four months between releases, so it was reliably
+  asleep exactly when a release landed. It missed v1.37 that way. Watch
+  https://kubernetes.io/blog/ instead.
+- Thumbnail generation could run in CI if that is ever wanted: the raster path is
+  pure Pillow, and only SVG sources need `rsvg-convert`.
 
 ## Rules for agents
 
